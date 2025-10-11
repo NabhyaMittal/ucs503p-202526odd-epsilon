@@ -1,0 +1,92 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<h1>Recommendations</h1>
+<p>Welcome! Tell me how you want to get recommendations:</p>
+
+<div class="recommend-options">
+  <button id="by-movie">🎬 Based on a Movie Name</button>
+  <button id="by-chat">💬 Chat with Bot</button>
+</div>
+
+<!-- Movie input box (hidden initially) -->
+<div id="movie-search-container" style="display: none;">
+  <form id="recommend-form" method="POST" action="{{ url_for('get_recommendations') }}">
+    <input type="text" id="movie-input" name="movie_name" placeholder="Enter movie name..." autocomplete="off">
+    <div id="suggestions"></div>
+    <button type="submit">Recommend</button>
+  </form>
+</div>
+
+<!-- Chatbot (hidden by default) -->
+<div class="chatbot" id="chatbot" style="display: none;">
+  <div class="chat-header">
+    🎬 Movie Bot <span class="chat-toggle">−</span>
+  </div>
+  <div class="chat-body">
+    <div class="bot-msg">Hi! Tell me your mood 🤖</div>
+  </div>
+  <div class="chat-footer">
+    <input type="text" placeholder="Type your message...">
+    <button>➤</button>
+  </div>
+</div>
+
+<!-- Inline JS for interaction -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const chatBtn = document.getElementById("by-chat");
+  const movieBtn = document.getElementById("by-movie");
+  const chatbot = document.getElementById("chatbot");
+  const searchContainer = document.getElementById("movie-search-container");
+  const movieInput = document.getElementById("movie-input");
+  const suggestions = document.getElementById("suggestions");
+  const toggleBtn = document.querySelector(".chat-toggle");
+  const chatBody = document.querySelector(".chat-body");
+  const chatFooter = document.querySelector(".chat-footer");
+
+  chatBtn.addEventListener("click", () => {
+    chatbot.style.display = "flex";
+    searchContainer.style.display = "none";
+  });
+
+  movieBtn.addEventListener("click", () => {
+    chatbot.style.display = "none";
+    searchContainer.style.display = "block";
+  });
+
+  movieInput?.addEventListener("input", async () => {
+    const query = movieInput.value.trim();
+    if (query.length < 2) {
+      suggestions.innerHTML = "";
+      return;
+    }
+    const res = await fetch(`/search_movie?q=${query}`);
+    const data = await res.json();
+    suggestions.innerHTML = "";
+    data.forEach(title => {
+      const div = document.createElement("div");
+      div.classList.add("suggestion-item");
+      div.textContent = title;
+      div.addEventListener("click", () => {
+        movieInput.value = title;
+        suggestions.innerHTML = "";
+      });
+      suggestions.appendChild(div);
+    });
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    if (chatBody.style.display === "none") {
+      chatBody.style.display = "block";
+      chatFooter.style.display = "flex";
+      toggleBtn.textContent = "−";
+    } else {
+      chatBody.style.display = "none";
+      chatFooter.style.display = "none";
+      toggleBtn.textContent = "+";
+    }
+  });
+});
+</script>
+{% endblock %}
