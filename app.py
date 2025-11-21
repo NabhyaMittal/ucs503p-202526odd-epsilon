@@ -10,7 +10,7 @@ from urllib.parse import quote_plus
 try:
     import google.generativeai as genai
     # NOTE: Using a hardcoded API key is generally unsafe.
-    api_key=os.getenv("GOOGLE_API_KEY")
+    api_key=os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=api_key) 
     model = genai.GenerativeModel('gemini-2.5-flash') 
     print("Gemini model loaded successfully.")
@@ -371,36 +371,52 @@ def chat():
     try:
         data = request.json
         user_message = data.get("message")
-        context = data.get("context", "") 
+        context = data.get("context", "")
 
         if not context:
             prompt = f"{SYSTEM_PROMPT}\n\nUser: {user_message}"
         else:
             prompt = f"{SYSTEM_PROMPT}\n\nPrevious Context: {context}\n\nUser: {user_message}"
 
+        # --- DIAGNOSTIC STEP 1: Check LLM Response ---
+        print(f"--- Calling LLM with prompt for user: {user_message[:50]}...")
+        
         response = model.generate_content(prompt)
         
         response_text = response.text.strip()
+        print(f"--- RAW LLM Response Text: {response_text[:500]}...") # Print the raw output
+        
         start_index = response_text.find('{')
         end_index = response_text.rfind('}')
         
         if start_index == -1 or end_index == -1:
-            raise json.JSONDecodeError("Delimiters not found", response_text, 0)
+            # This is correct handling for malformed JSON structure
+            raise json.JSONDecodeError("JSON delimiters not found or malformed.", response_text, 0)
             
         json_string = response_text[start_index:end_index+1].strip()
         response_data = json.loads(json_string)
         
         recommended_movies = response_data.get("recommended_movies", [])
-        visual_recommendations = _fetch_visual_recommendations(recommended_movies)
+
+        # --- DIAGNOSTIC STEP 2: Check _fetch_visual_recommendations ---
+        print(f"--- Recommended Movies found: {recommended_movies}")
+        
+        visual_recommendations = _fetch_visual_recommendations(recommended_movies) # Likely crash point
+        
         response_data['visual_recommendations'] = visual_recommendations
         
         return jsonify(response_data)
 
     except json.JSONDecodeError as e:
-        print(f"JSONDecodeError: {e}")
+        # This handles cases where the model returns invalid JSON syntax
+        print(f"JSONDecodeError: {e} | Raw Text causing error: {response_text[:100]}")
         return jsonify({"reply_to_user": "Sorry, I got a little confused. Could you rephrase that?"}), 200
+        
     except Exception as e:
-        print(f"Chat Error: {e}")
+        # This catch-all now prints the actual error for diagnosis
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print(f"CRITICAL UNCAUGHT CHAT ERROR: {type(e).__name__}: {e}")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return jsonify({"error": "Sorry, I'm having trouble thinking right now."}), 500
 
 
