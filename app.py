@@ -76,7 +76,7 @@ def get_streaming_links(imdb_id):
 def _search_movies_utility(query):
     """Utility function to search the movie catalog."""
     try:
-        response = requests.get(SEARCH_API_URL, params={"title": quote_plus(query)})
+        response = requests.get(SEARCH_API_URL, params={"title": query})
         response.raise_for_status()
         data = response.json()
         
@@ -245,7 +245,7 @@ def search_catalog():
         return jsonify([])
 
     try:
-        response = requests.get(SEARCH_API_URL, params={"title": quote_plus(query)})
+        response = requests.get(SEARCH_API_URL, params={"title": query})
         response.raise_for_status()
         data = response.json()
 
