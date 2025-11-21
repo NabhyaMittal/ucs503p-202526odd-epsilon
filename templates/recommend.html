@@ -1,0 +1,750 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<style>
+/* --- Recommendation Specific Styles --- */
+.recommend-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+.recommend-options button {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+}
+#by-movie {
+    background: #00a8e1; /* Catalog Blue */
+    color: #fff;
+}
+#by-chat {
+    background: #ff6b81; /* Recommendation Pink */
+    color: #fff;
+}
+#by-movie:hover, #by-chat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Search Container for Recommendations (By Movie) --- */
+#movie-search-container {
+    padding: 2rem;
+    background: #2f3542;
+    border-radius: 15px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+#search-movie-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+#search-movie-form input {
+    flex-grow: 1;
+    padding: 0.75rem;
+    border: 2px solid #3742fa;
+    border-radius: 8px;
+    background: #1e272e;
+    color: #dfe4ea;
+}
+#search-movie-form button {
+    background: #3742fa;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+#search-movie-form button:hover {
+    background: #5463ff;
+}
+#search-movie-form button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+/* --- Visual Search Results (For "Based on a Movie Name" mode) --- */
+#recommendation-search-results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    padding: 1rem;
+}
+
+/* --- NEW: Visual Recommendation Container (For "Chat with Bot" mode) --- */
+.recommend-chat-layout {
+    display: none; /* Initially hidden, shown when chat is active */
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1rem;
+    justify-content: center; /* Center the layout container */
+    align-items: flex-start;
+}
+
+#visual-recommendation-container {
+    flex-basis: 750px; /* Allocate space for the visual results */
+    background: #2f3542;
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+    min-height: 400px; 
+    margin-left: 20px; /* Space from the chatbot if it were in the flow */
+    position: relative;
+}
+
+#visual-recommendation-container h2 {
+    color: #ffa502;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #4a5568;
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+#recommended-movies-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: flex-start;
+}
+
+/* --- Card Styles (Used by both modes) --- */
+.recommendation-movie-card {
+    background: #1e272e;
+    border-radius: 10px;
+    padding: 0.8rem;
+    width: 150px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.recommendation-movie-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.recommendation-movie-card img {
+    width: 100%;
+    height: 225px; /* Standard poster height for 150px width */
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.recommendation-movie-card p {
+    color: #dfe4ea;
+    font-weight: 500;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.recommendation-movie-card button {
+    /* MODIFIED: Changed button style for "Watch Now" and "Select Movie" */
+    background: #ffa502; 
+    color: #1e272e;
+    border: none;
+    padding: 0.5rem 0.8rem;
+    border-radius: 5px;
+    margin-top: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+.recommendation-movie-card button:hover {
+    background: #ffc24d;
+}
+
+/* --- Chatbot Styles --- */
+.chatbot {
+    position: fixed;
+    bottom: 20px; /* Standard fixed bottom position */
+    right: 20px; /* Standard fixed right position */
+    width: 350px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    background: #1e272e;
+    max-height: 80vh;
+}
+.chat-header {
+    background: #3742fa;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+.chat-toggle {
+    font-size: 1.5rem;
+}
+.chat-body {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #2f3542;
+    max-height: 400px;
+}
+.chat-footer {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #3742fa;
+}
+#chat-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #485460;
+    border-radius: 5px 0 0 5px;
+    background: #1e272e;
+    color: #dfe4ea;
+}
+#send-btn {
+    background: #3742fa;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+}
+.user-msg, .bot-msg {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 80%;
+}
+.user-msg {
+    background: #70a1ff;
+    color: #1e272e;
+    align-self: flex-end;
+    margin-left: auto;
+}
+.bot-msg {
+    background: #3742fa;
+    color: white;
+    align-self: flex-start;
+    margin-right: auto;
+}
+
+/* --- NEW: Modal Styles for Streaming Links --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 100; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
+
+.modal-content {
+    background-color: #2f3542;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    color: #dfe4ea;
+    position: relative;
+}
+
+.close-button {
+    color: #dfe4ea;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #ff6b81;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modalContent ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+#modalContent li {
+    background: #1e272e;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+#modalContent li:hover {
+    background: #3742fa;
+}
+
+#modalContent a {
+    color: #ffa502;
+    text-decoration: none;
+    font-weight: 600;
+    display: block;
+    text-align: center;
+}
+
+#modalContent a:hover {
+    color: white;
+}
+</style>
+
+<h1>Recommendations</h1>
+<p>Welcome! Tell me how you want to get recommendations:</p>
+
+<div class="recommend-options">
+  <button id="by-chat">💬 Chat with Bot</button>
+  <button id="by-movie">🎬 Based on a Movie Name</button>
+</div>
+
+<!-- Movie Search Container (For "Based on a Movie Name" mode) -->
+<div id="movie-search-container" style="display: none;">
+  <form id="search-movie-form">
+    <input type="text" id="movie-input" placeholder="Enter movie name..." autocomplete="off">
+    <button type="submit" id="search-movie-btn">Search Movie</button>
+  </form>
+    
+    <div id="recommendation-search-results">
+        <!-- Search results will be loaded here -->
+    </div>
+</div>
+
+<!-- NEW: Container for the chatbot's visual recommendations -->
+<div class="recommend-chat-layout" id="recommend-chat-layout">
+    <!-- Placeholder: Chatbot will appear fixed on the bottom right -->
+    
+    <div id="visual-recommendation-container" style="display: none;">
+        <h2>Bot's Movie Recommendations</h2>
+        <div id="recommended-movies-list">
+            <!-- Recommended movie cards will be rendered here -->
+            <p style="color: #dfe4ea; font-style: italic;">Chat with the bot to receive instant movie recommendations!</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- Chatbot remains the same -->
+<div class="chatbot" id="chatbot" style="display: none;">
+  <div class="chat-header">
+    🎬 Movie Bot <span class="chat-toggle">−</span>
+  </div>
+  <div class="chat-body">
+    <div class="bot-msg">Hi! How are you doing? 🤖</div>
+  </div>
+  <div class="chat-footer">
+    <input type="text" id="chat-input" placeholder="Type your message...">
+    <button id="send-btn">➤</button>
+  </div>
+</div>
+
+<!-- Hidden form is still needed for the "Select Movie" action in Movie Search Mode -->
+<form id="final-recommendation-form" method="POST" action="{{ url_for('get_recommendations') }}" style="display: none;">
+    <input type="hidden" name="movie_id" id="selected-movie-id">
+    <input type="hidden" name="movie_title" id="selected-movie-title">
+</form>
+
+<!-- The Modal / Pop-up Window for Streaming Links (NEW) -->
+<div id="streamingModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3 id="modalTitle">Streaming Links</h3>
+        <div id="modalContent">
+            <p style="text-align: center;">Click 'Watch Now' to fetch streaming data...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // --- Message Box utility (replaces alert) ---
+    const showMessage = (message) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.textContent = message;
+        tempDiv.style.cssText = `
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            padding: 20px; 
+            background-color: #ff4757; 
+            color: white; 
+            border-radius: 8px; 
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            font-size: 1.1rem;
+        `;
+        document.body.appendChild(tempDiv);
+        setTimeout(() => {
+            document.body.removeChild(tempDiv);
+        }, 3000);
+    };
+
+    // --- Element Selection ---
+    const chatBtn = document.getElementById("by-chat");
+    const movieBtn = document.getElementById("by-movie");
+    const chatbot = document.getElementById("chatbot");
+    const searchContainer = document.getElementById("movie-search-container");
+    const recChatLayout = document.getElementById("recommend-chat-layout"); // NEW LAYOUT
+    
+    // Movie Search Elements
+    const movieInput = document.getElementById("movie-input");
+    const searchMovieForm = document.getElementById("search-movie-form");
+    const searchBtn = document.getElementById("search-movie-btn");
+    const resultsContainer = document.getElementById("recommendation-search-results");
+    const finalRecForm = document.getElementById("final-recommendation-form");
+    const selectedMovieId = document.getElementById("selected-movie-id");
+    const selectedMovieTitle = document.getElementById("selected-movie-title");
+    
+    // Chatbot Elements
+    const chatBody = document.querySelector(".chat-body");
+    const chatFooter = document.querySelector(".chat-footer");
+    const toggleBtn = document.querySelector(".chat-toggle");
+    const chatInput = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-btn");
+    
+    // Recommendation Display Elements
+    const visualRecContainer = document.getElementById("visual-recommendation-container");
+    const recommendedMoviesList = document.getElementById("recommended-movies-list");
+
+    // Streaming Modal Elements (NEW)
+    const modal = document.getElementById("streamingModal");
+    const closeBtn = document.getElementsByClassName("close-button")[0];
+    const modalTitle = document.getElementById("modalTitle");
+    const modalContentDiv = document.getElementById("modalContent");
+
+
+    // --- Streaming Link Fetching Logic (NEW) ---
+
+    // Function to close the modal
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // Close the modal when the user clicks anywhere outside of the modal
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Utility for exponential backoff retry
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+   
+    // Generic fetch wrapper with retry logic
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
+                if (i === maxRetries - 1) {
+                    throw error;
+                }
+                // Exponential backoff delay
+                const delay = Math.pow(2, i) * 1000;
+                await sleep(delay);
+            }
+        }
+    }
+
+    // Main function to fetch and display streaming links
+    async function fetchStreamingLinks(id, targetDiv) {
+        targetDiv.innerHTML = '<p style="text-align: center; color: #ffa502;">Fetching links...</p>';
+
+        try {
+            // The API endpoint should be available in the backend (app.py)
+            const url = `/get_streaming_links?imdb_id=${id}`;
+            const response = await fetchWithRetry(url, { method: 'GET' });
+           
+            const data = await response.json();
+
+            if (data.error) {
+                targetDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">Error: ${data.error}</p>`;
+                return;
+            }
+
+            // Successfully received links (data is an object of service: url pairs)
+            let linksHtml = '<ul>';
+            let linkCount = 0;
+
+            // Iterate over the service/URL pairs
+            for (const [service, linkUrl] of Object.entries(data)) {
+                linksHtml += `<li><a href="${linkUrl}" target="_blank" title="Stream on ${service}">${service}</a></li>`;
+                linkCount++;
+            }
+            linksHtml += '</ul>';
+
+            if (linkCount > 0) {
+                targetDiv.innerHTML = linksHtml;
+            } else {
+                targetDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">No streaming links found for this movie at this time.</p>`;
+            }
+
+        } catch (error) {
+            console.error('Failed to fetch streaming links:', error);
+            targetDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">Failed to connect to the streaming API. Try again later.</p>`;
+        }
+    }
+
+
+    // --- Toggling Views ---
+    chatBtn.addEventListener("click", () => {
+        // Show fixed chatbot and the new visual recommendation layout
+        chatbot.style.display = "flex";
+        recChatLayout.style.display = "flex";
+        
+        // Hide movie search mode
+        searchContainer.style.display = "none";
+        resultsContainer.innerHTML = ""; 
+    });
+
+    movieBtn.addEventListener("click", () => {
+        // Hide chat mode
+        chatbot.style.display = "none";
+        recChatLayout.style.display = "none";
+        visualRecContainer.style.display = "none";
+        recommendedMoviesList.innerHTML = "";
+        
+        // Show movie search mode
+        searchContainer.style.display = "block";
+    });
+    
+    // --- MODIFIED: Recommendation Rendering Function (Client-side renderer) ---
+    // This function handles rendering the recommended movies from the chatbot response.
+    const renderVisualRecommendations = (movies) => {
+        recommendedMoviesList.innerHTML = ""; // Clear existing content
+        visualRecContainer.style.display = "block"; // Ensure container is visible
+
+        if (movies.length === 0) {
+            recommendedMoviesList.innerHTML = '<p style="color: #dfe4ea; font-style: italic; text-align: center;">No visual data found for the suggested titles.</p>';
+            return;
+        }
+
+        movies.forEach(movie => {
+            if (!movie.imdb_id) return; // Skip if ID is missing
+
+            const card = document.createElement("div");
+            card.classList.add("recommendation-movie-card");
+
+            const img = document.createElement("img");
+            img.src = movie.poster_path;
+            img.alt = `${movie.title} Poster`;
+            img.onerror = () => { img.src = 'https://placehold.co/150x225/2f3542/f1f1f1?text=No+Poster'; };
+
+            const titleEl = document.createElement("p");
+            titleEl.textContent = movie.title;
+
+            // MODIFIED: Replaced "See Similar" with "Watch Now"
+            const watchBtn = document.createElement("button");
+            watchBtn.textContent = "Watch Now";
+            
+            // Watch Now Button Handler
+            watchBtn.addEventListener("click", () => {
+                // Update modal title with the movie name
+                modalTitle.textContent = `Streaming Links for ${movie.title}`;
+                
+                modal.style.display = "flex"; // Show the modal
+                fetchStreamingLinks(movie.imdb_id, modalContentDiv); // Fetch links for this movie
+            });
+
+            card.appendChild(img);
+            card.appendChild(titleEl);
+            card.appendChild(watchBtn);
+            
+            recommendedMoviesList.appendChild(card);
+        });
+    };
+
+
+    // --- MODIFIED: Recommendation Search Functionality (Movie Mode) ---
+
+    searchMovieForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const query = movieInput.value.trim();
+        if (query.length < 2) return;
+
+        resultsContainer.innerHTML = '<p style="color:#dfe4ea; text-align: center;">Searching...</p>';
+        searchBtn.disabled = true;
+
+        try {
+            // Use the new API search route for visual results
+            const res = await fetch(`/search_catalog?q=${encodeURIComponent(query)}&limit=5`);
+            const movies = await res.json();
+
+            resultsContainer.innerHTML = "";
+            
+            if (movies.length === 0) {
+                resultsContainer.innerHTML = '<p style="color:#dfe4ea; text-align: center;">No movies found. Try another title.</p>';
+                return;
+            }
+
+            movies.forEach(movie => {
+                if (!movie.imdb_id) return;
+
+                const card = document.createElement("div");
+                card.classList.add("recommendation-movie-card");
+
+                const img = document.createElement("img");
+                img.src = movie.poster_path;
+                img.alt = `${movie.title} Poster`;
+                img.onerror = () => { img.src = 'https://placehold.co/150x225/2f3542/f1f1f1?text=No+Poster'; };
+
+                const titleEl = document.createElement("p");
+                titleEl.textContent = movie.title;
+                titleEl.style.fontWeight = 'bold';
+                titleEl.style.fontSize = '0.9rem';
+
+                const selectBtn = document.createElement("button");
+                selectBtn.textContent = "Select Movie"; // This button still submits for similar movies
+                
+                // When button is clicked, set the hidden form's values and submit it
+                selectBtn.addEventListener("click", () => {
+                    selectedMovieId.value = movie.imdb_id;
+                    selectedMovieTitle.value = movie.title;
+                    finalRecForm.submit(); // Submit the form to get_recommendations
+                });
+                
+                card.appendChild(img);
+                card.appendChild(titleEl);
+                card.appendChild(selectBtn);
+                
+                resultsContainer.appendChild(card);
+            });
+
+        } catch (error) {
+            console.error("Error fetching recommendation search results:", error);
+            resultsContainer.innerHTML = '<p style="color: #ff4757; text-align: center;">Error searching for movies.</p>';
+        } finally {
+            searchBtn.disabled = false;
+        }
+    });
+
+
+    // --- MODIFIED: Chatbot Logic ---
+    
+    let chatContext = ""; // This variable will store the conversation context
+
+    // Helper function to add messages to the chat UI
+    const addMessageToChat = (sender, message) => {
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add(sender === 'user' ? 'user-msg' : 'bot-msg');
+        msgDiv.textContent = message;
+        chatBody.appendChild(msgDiv);
+        
+        // Auto-scroll to the bottom
+        chatBody.scrollTop = chatBody.scrollHeight;
+        return msgDiv; // Return the element in case we need to update it
+    };
+
+    // Main function to handle sending a message
+    const sendMessage = async () => {
+        const message = chatInput.value.trim();
+        if (!message) return; // Don't send empty messages
+
+        // Display user's message immediately
+        addMessageToChat('user', message);
+        chatInput.value = ""; // Clear input
+        
+        // Show a loading message
+        const loadingMsg = addMessageToChat('bot', 'Thinking...');
+
+        // Clear existing visual recommendations and show a loading state on the visual panel
+        recommendedMoviesList.innerHTML = '<p style="color: #ffa502; text-align: center;">Waiting for bot response and movie details...</p>';
+        visualRecContainer.style.display = "block";
+
+
+        try {
+            // Send message and context to the backend
+            const res = await fetch("{{ url_for('chat') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    message: message,
+                    context: chatContext // Send the stored context
+                }),
+            });
+
+            const data = await res.json();
+            
+            // Remove the "Thinking..." message
+            loadingMsg.remove();
+
+            if (data.error) {
+                addMessageToChat('bot', data.error);
+                recommendedMoviesList.innerHTML = '<p style="color: #ff4757; text-align: center;">Error fetching recommendations.</p>';
+            } else {
+                // 1. Add the bot's reply
+                addMessageToChat('bot', data.reply_to_user);
+                
+                // 2. **CRITICAL: Update the context for the next turn**
+                chatContext = data.context; 
+
+                // 3. Display visual recommendations using pre-fetched data
+                if (data.visual_recommendations && Array.isArray(data.visual_recommendations) && data.visual_recommendations.length > 0) {
+                    renderVisualRecommendations(data.visual_recommendations);
+                } else {
+                    // Reset the visual panel if no valid recommendations were found by the backend
+                    recommendedMoviesList.innerHTML = '<p style="color: #dfe4ea; font-style: italic; text-align: center;">No specific visual recommendations yet. Keep chatting!</p>';
+                }
+            }
+
+        } catch (error) {
+            console.error("Chat fetch error:", error);
+            loadingMsg.textContent = "Error connecting to the server.";
+            recommendedMoviesList.innerHTML = '<p style="color: #ff4757; text-align: center;">Connection Error.</p>';
+        }
+    };
+
+    // Add event listeners for Send button and Enter key
+    sendBtn.addEventListener("click", sendMessage);
+    chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault(); // Prevent form submission
+            sendMessage();
+        }
+    });
+
+    // Chatbot minimize/maximize
+    toggleBtn.addEventListener("click", () => {
+        if (chatBody.style.display === "none" || chatBody.style.display === "") {
+            chatBody.style.display = "block";
+            chatFooter.style.display = "flex";
+            toggleBtn.textContent = "−";
+        } else {
+            chatBody.style.display = "none";
+            chatFooter.style.display = "none";
+            toggleBtn.textContent = "+";
+        }
+    });
+
+});
+</script>
+{% endblock %}

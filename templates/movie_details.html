@@ -1,0 +1,901 @@
+{% extends "dashboard_base.html" %}
+
+
+
+{% block content %}
+
+<style>
+
+/* Base Layout */
+
+.movie-container {
+
+    background-color: #1e272e;
+
+    border-radius: 15px;
+
+    padding: 2rem;
+
+    color: #dfe4ea;
+
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+
+    max-width: 1200px;
+
+    margin: 2rem auto;
+
+}
+
+
+
+/* Flex Grid for Main Content */
+
+.main-content {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 2rem;
+
+    margin-bottom: 2rem;
+
+}
+
+
+
+/* Poster and Trailer Section (Left) */
+
+.poster-trailer-section {
+
+    flex: 1 1 350px; /* Allows flexibility but takes at least 350px */
+
+    position: relative;
+
+    background: #2f3542;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    min-height: 500px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+}
+
+
+
+.poster-trailer-section img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+
+}
+
+
+
+.trailer-link {
+
+    position: absolute;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    background: rgba(255, 255, 255, 0.9);
+
+    border-radius: 50%;
+
+    width: 80px;
+
+    height: 80px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 2rem;
+
+    color: #ff6b81;
+
+    text-decoration: none;
+
+    transition: transform 0.3s, background 0.3s;
+
+    cursor: pointer;
+
+}
+
+
+
+.trailer-link:hover {
+
+    background: #fff;
+
+    transform: translate(-50%, -50%) scale(1.1);
+
+}
+
+
+
+/* Info Section (Right) */
+
+.info-section {
+
+    flex: 2 1 500px;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+
+.info-section h2 {
+
+    color: #00a8e1;
+
+    font-size: 2.5rem;
+
+    margin-bottom: 0.5rem;
+
+}
+
+
+
+.subtitle {
+
+    font-size: 1.1rem;
+
+    color: #7f8fa6;
+
+    margin-bottom: 1.5rem;
+
+}
+
+
+
+.description-box {
+
+    background: #2f3542; /* Grey box background */
+
+    padding: 1rem;
+
+    border-radius: 8px;
+
+    flex-grow: 1;
+
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+}
+
+
+
+.description-text {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    /* Limit height for visual effect */
+
+    max-height: 200px;
+
+    line-height: 1.5;
+
+}
+
+
+
+.read-more-footer {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    align-items: center;
+
+    margin-top: 1rem;
+
+    padding-top: 0.5rem;
+
+    border-top: 1px solid #485460;
+
+}
+
+
+
+.cta-read-more {
+
+    background: #ffa502;
+
+    color: #1e272e;
+
+    padding: 0.5rem 1rem;
+
+    border-radius: 5px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+
+    transition: background 0.3s;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+.cta-read-more:hover {
+
+    background: #ffc24d;
+
+}
+
+
+
+/* --- Graphics and Streaming Section (Bottom) --- */
+
+.bottom-sections {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    flex-wrap: wrap;
+
+    gap: 2rem;
+
+    margin-top: 2rem;
+
+}
+
+
+
+.graphics-section {
+
+    flex: 2 1 50%;
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 1rem;
+
+    align-items: center;
+
+}
+
+
+
+.graphic-box {
+
+    background: #ff6b81; /* Pink for graphics/cast */
+
+    min-width: 100px;
+
+    height: 100px;
+
+    padding: 0.5rem;
+
+    border-radius: 10px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-size: 0.8rem;
+
+    font-weight: bold;
+
+    color: #1e272e;
+
+    text-align: center;
+
+}
+
+
+
+.streaming-section {
+
+    flex: 1 1 40%;
+
+    display: flex;
+
+    gap: 1rem;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+}
+
+
+
+#getStreamingLinksBtn {
+
+    background: #3742fa; /* Blue for streaming links */
+
+    color: white;
+
+    padding: 1rem 1.5rem;
+
+    border-radius: 10px;
+
+    font-size: 1rem;
+
+    font-weight: bold;
+
+    transition: background 0.3s;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+#getStreamingLinksBtn:hover {
+
+    background: #5463ff;
+
+}
+
+
+
+/* --- Modal Styles --- */
+
+.modal {
+
+    display: none;
+
+    position: fixed;
+
+    z-index: 100;
+
+    left: 0;
+
+    top: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    overflow: auto;
+
+    background-color: rgba(0,0,0,0.7);
+
+}
+
+
+
+.modal-content {
+
+    background-color: #2f3542;
+
+    margin: 15% auto;
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    width: 80%;
+
+    max-width: 500px;
+
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+
+    color: #dfe4ea;
+
+}
+
+
+
+.modal-content h3 {
+
+    color: #00a8e1;
+
+    border-bottom: 2px solid #00a8e1;
+
+    padding-bottom: 0.5rem;
+
+    margin-bottom: 1rem;
+
+}
+
+
+
+.modal-content ul {
+
+    list-style: none;
+
+    padding: 0;
+
+}
+
+
+
+.modal-content li {
+
+    background: #1e272e;
+
+    padding: 0.75rem;
+
+    margin-bottom: 0.5rem;
+
+    border-radius: 5px;
+
+}
+
+
+
+.modal-content a {
+
+    color: #ffa502;
+
+    text-decoration: none;
+
+    font-weight: bold;
+
+    display: block;
+
+    word-wrap: break-word;
+
+}
+
+.modal-content a:hover {
+
+    text-decoration: underline;
+
+}
+
+
+
+.close-button {
+
+    color: #dfe4ea;
+
+    float: right;
+
+    font-size: 28px;
+
+    font-weight: bold;
+
+}
+
+
+
+.close-button:hover,
+
+.close-button:focus {
+
+    color: #ff6b81;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+}
+
+
+
+
+
+/* Responsive Adjustments */
+
+@media (max-width: 800px) {
+
+    .main-content {
+
+        flex-direction: column;
+
+    }
+
+    .bottom-sections {
+
+        flex-direction: column;
+
+        gap: 1rem;
+
+    }
+
+    .streaming-section {
+
+        justify-content: flex-start;
+
+    }
+
+    .graphics-section {
+
+        justify-content: center;
+
+    }
+
+}
+
+</style>
+
+
+
+<!-- Hidden element to store the IMDb ID -->
+
+<input type="hidden" id="imdb_id" value="{{ movie.imdb_id }}">
+
+
+
+<div class="movie-container">
+
+    <div class="main-content">
+
+        <!-- 1. Poster and Trailer -->
+
+        <div class="poster-trailer-section">
+
+            <img
+
+                src="{{ movie.poster_url }}"
+
+                alt="{{ movie.title }} Poster"
+
+                onerror="this.onerror=null; this.src='https://placehold.co/350x500/2f3542/dfe4ea?text=Poster+Unavailable';"
+
+            >
+
+            <a
+
+                href="https://www.youtube.com/results?search_query={{ movie.title|urlencode }}+official+trailer"
+
+                target="_blank"
+
+                class="trailer-link"
+
+                aria-label="Watch Trailer on YouTube"
+
+                title="Watch Trailer on YouTube"
+
+            >
+
+                &#x25B6; <!-- Play icon -->
+
+            </a>
+
+        </div>
+
+
+
+        <!-- 2. Info Section -->
+
+        <div class="info-section">
+
+            <h2>{{ movie.title }}</h2>
+
+            <p class="subtitle">{{ movie.rank }}</p>
+
+
+
+            <div class="description-box">
+
+                <p class="description-text">
+
+                    {{ movie.description }}
+
+                </p>
+
+                <div class="read-more-footer">
+
+                   
+
+                    <!-- Links to the original IMDb page for the full overview/read more -->
+
+                    <a href="https://www.imdb.com/title/{{ movie.imdb_id }}" target="_blank" class="cta-read-more">
+
+                        CFA (Read more)
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="bottom-sections">
+
+        <!-- 3. Graphics (Star Cast, etc.) -->
+
+        <div class="graphics-section">
+
+            {% for cast in movie.cast_members %}
+
+            <div class="graphic-box" title="Starring: {{ cast }}">
+
+                Starring: <br> {{ cast }}
+
+            </div>
+
+            {% else %}
+
+            <div class="graphic-box" style="background: #485460;">
+
+                Cast data <br> unavailable.
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+
+
+        <!-- 4. Streaming Links Button (Functional) -->
+
+        <div class="streaming-section">
+
+            <button id="getStreamingLinksBtn" title="Find where to stream or rent this movie">
+
+                Get Streaming Links
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+</div>
+
+
+
+<!-- The Modal / Pop-up Window for Streaming Links -->
+
+<div id="streamingModal" class="modal">
+
+    <div class="modal-content">
+
+        <span class="close-button">&times;</span>
+
+        <h3>Streaming Links for {{ movie.title }}</h3>
+
+        <div id="modalContent">
+
+            <p style="text-align: center;">Click 'Get Streaming Links' to fetch data...</p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Check for the movie object passed from Flask
+
+    const imdbIdElement = document.getElementById('imdb_id');
+
+    if (!imdbIdElement) {
+
+        console.error("IMDb ID element not found. Cannot initialize streaming links functionality.");
+
+        return;
+
+    }
+
+    const imdbId = imdbIdElement.value;
+
+   
+
+    // Modal elements
+
+    const modal = document.getElementById("streamingModal");
+
+    const btn = document.getElementById("getStreamingLinksBtn");
+
+    const span = document.getElementsByClassName("close-button")[0];
+
+    const modalContentDiv = document.getElementById("modalContent");
+
+
+
+    // Function to show the modal and initiate the API call
+
+    btn.onclick = function() {
+
+        modal.style.display = "block";
+
+        fetchStreamingLinks(imdbId);
+
+    }
+
+
+
+    // Function to close the modal
+
+    span.onclick = function() {
+
+        modal.style.display = "none";
+
+    }
+
+
+
+    // Close the modal when the user clicks anywhere outside of the modal
+
+    window.onclick = function(event) {
+
+        if (event.target == modal) {
+
+            modal.style.display = "none";
+
+        }
+
+    }
+
+
+
+    // --- API Fetch Logic ---
+
+
+
+    // Utility for exponential backoff retry
+
+    function sleep(ms) {
+
+        return new Promise(resolve => setTimeout(resolve, ms));
+
+    }
+
+   
+
+    // Generic fetch wrapper with retry logic
+
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+
+        for (let i = 0; i < maxRetries; i++) {
+
+            try {
+
+                const response = await fetch(url, options);
+
+                if (!response.ok) {
+
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+
+                }
+
+                return response;
+
+            } catch (error) {
+
+                if (i === maxRetries - 1) {
+
+                    throw error;
+
+                }
+
+                // Exponential backoff delay
+
+                const delay = Math.pow(2, i) * 1000;
+
+                await sleep(delay);
+
+            }
+
+        }
+
+    }
+
+
+
+    async function fetchStreamingLinks(id) {
+
+        modalContentDiv.innerHTML = '<p style="text-align: center; color: #ffa502;">Fetching links...</p>';
+
+
+
+        try {
+
+            const url = `/get_streaming_links?imdb_id=${id}`;
+
+            const response = await fetchWithRetry(url, { method: 'GET' });
+
+           
+
+            const data = await response.json();
+
+
+
+            // Check if the server returned an error message in the JSON payload
+
+            if (data.error) {
+
+                modalContentDiv.innerHTML = `<p style="color: #ff6b81;">Error: ${data.error}</p>`;
+
+                return;
+
+            }
+
+
+
+            // Successfully received links (data is an object of service: url pairs)
+
+            let linksHtml = '<ul>';
+
+            let linkCount = 0;
+
+
+
+            // Iterate over the service/URL pairs
+
+            for (const [service, linkUrl] of Object.entries(data)) {
+
+                linksHtml += `<li><a href="${linkUrl}" target="_blank" title="Stream on ${service}">${service}</a></li>`;
+
+                linkCount++;
+
+            }
+
+            linksHtml += '</ul>';
+
+
+
+            if (linkCount > 0) {
+
+                modalContentDiv.innerHTML = linksHtml;
+
+            } else {
+
+                modalContentDiv.innerHTML = `<p style="color: #ff6b81;">No streaming links found for this movie at this time.</p>`;
+
+            }
+
+
+
+        } catch (error) {
+
+            console.error('Failed to fetch streaming links:', error);
+
+            modalContentDiv.innerHTML = `<p style="color: #ff6b81;">Failed to connect to the streaming API. Try again later.</p>`;
+
+        }
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

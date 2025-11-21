@@ -1,0 +1,106 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<style>
+.results-header {
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+    border-bottom: 2px solid #3742fa;
+    color: #dfe4ea;
+}
+.results-header h1 {
+    font-size: 2.2rem;
+    color: #00a8e1;
+    margin-bottom: 0.5rem;
+}
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+.movie-result-item {
+    background: #2f3542;
+    padding: 1.5rem;
+    border-radius: 10px;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.movie-result-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+.movie-poster {
+    width: 100px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+.movie-info {
+    flex-grow: 1;
+}
+.movie-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.3rem;
+    color: #ffa502;
+}
+.movie-info p {
+    color: #a4b0be;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+.details-button {
+    background: #3742fa;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+.details-button:hover {
+    background: #5463ff;
+}
+</style>
+
+<div class="results-header">
+    <h1>Search Results for: "{{ query }}"</h1>
+    <p>{{ movies|length }} result{{ 's' if movies|length != 1 else '' }} found.</p>
+</div>
+
+<div class="results-list">
+    {% for movie in movies %}
+    <div class="movie-result-item">
+        <!-- Poster Path -->
+        <img 
+            src="{{ movie.poster_path }}" 
+            alt="{{ movie.title }} Poster" 
+            class="movie-poster"
+            onerror="this.onerror=null; this.src='https://placehold.co/100x150/ff6b81/1e272e?text=No+Poster';"
+        >
+        
+        <div class="movie-info">
+            <!-- Title -->
+            <h3>{{ movie.title }}</h3>
+            
+            <!-- Short Description/Overview -->
+            <p>Click view details to explore more about the movie.</p>
+            
+            <!-- Link to Movie Details Page -->
+            <a href="{{ url_for('movie_details', movie_id=movie.imdb_id) }}" class="details-button">
+                View Details
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <p style="text-align: center; color: #7f8fa6;">Sorry, no results were found for that search term.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

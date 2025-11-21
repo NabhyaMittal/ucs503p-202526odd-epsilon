@@ -1,0 +1,332 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<style>
+    /* Global Styles */
+    body {
+        font-family: 'Inter', sans-serif;
+        color: #f1f1f1;
+        background-color: #1a1a1a;
+    }
+
+    h1 {
+        color: #3742fa;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    p.subtext {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #dfe4ea;
+        font-size: 1.1rem;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .movie-card {
+        background: #2f3542;
+        border-radius: 12px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .movie-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Image Area */
+    .movie-card img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-bottom: 2px solid #3742fa;
+    }
+
+    /* Info Area */
+    .movie-info {
+        padding: 1rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .movie-info h3 {
+        color: #ffa502;
+        font-size: 1.1rem;
+        margin-top: 0;
+        margin-bottom: 1rem;
+        line-height: 1.3;
+    }
+
+    /* Watch Now Button Style */
+    .watch-now-btn {
+        background: linear-gradient(135deg, #3742fa 0%, #5463ff 100%);
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.95rem;
+        font-weight: bold;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        margin-top: auto;
+        box-shadow: 0 4px 10px rgba(55, 66, 250, 0.3);
+    }
+
+    .watch-now-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(55, 66, 250, 0.5);
+    }
+
+    /* --- Modal Styles --- */
+    .modal {
+        display: none; 
+        position: fixed; 
+        z-index: 1000; 
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.8); 
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #2f3542;
+        margin: auto;
+        padding: 25px;
+        border: 1px solid #444;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 15px;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.6);
+        color: #dfe4ea;
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%); 
+    }
+
+    .modal-content h3 {
+        color: #00a8e1;
+        border-bottom: 2px solid #00a8e1;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        margin-top: 0;
+    }
+
+    .close-button {
+        color: #dfe4ea;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        position: absolute;
+        right: 20px;
+        top: 10px;
+        transition: color 0.2s;
+    }
+
+    .close-button:hover {
+        color: #ff6b81;
+    }
+
+    #modalContent ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #modalContent li {
+        background: #1e272e;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        text-align: center;
+        transition: background 0.2s;
+    }
+    
+    #modalContent li:hover {
+        background: #3742fa;
+    }
+
+    #modalContent a {
+        color: #ffa502;
+        text-decoration: none;
+        font-weight: bold;
+        display: block;
+    }
+    
+    #modalContent a:hover {
+        color: #fff;
+    }
+    
+    @media (max-width: 600px) {
+        .results-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .movie-card img {
+            height: 200px;
+        }
+        .watch-now-btn {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+<h1>Recommendations</h1>
+<p class="subtext">Because you liked "<strong>{{ movie_name }}</strong>"</p>
+
+{% if error %}
+    <p style="color: #ff4757; text-align: center;">{{ error }}</p>
+{% else %}
+    <div class="results-grid">
+        {% for movie in recommendations %}
+        <div class="movie-card">
+            <!-- Poster Image -->
+            <img 
+                src="{{ movie.poster_path }}" 
+                alt="{{ movie.title }}"
+                onerror="this.onerror=null; this.src='https://placehold.co/200x300/2f3542/f1f1f1?text=No+Poster'"
+            >
+            
+            <div class="movie-info">
+                <h3>{{ movie.title }}</h3>
+                
+                <!-- Watch Now Button: Triggers Streaming Modal -->
+                <button class="watch-now-btn" 
+                        data-imdb-id="{{ movie.imdb_id }}" 
+                        data-title="{{ movie.title }}">
+                    Watch Now
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Streaming Links Modal -->
+<div id="streamingModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3 id="modalTitle">Streaming Links</h3>
+        <div id="modalContent">
+            <p style="text-align: center;">Fetching data...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Modal Elements ---
+    const modal = document.getElementById("streamingModal");
+    const closeBtn = document.querySelector(".close-button");
+    const modalContentDiv = document.getElementById("modalContent");
+    const modalTitle = document.getElementById("modalTitle");
+
+    // --- Modal Logic ---
+    const closeModal = () => {
+        modal.style.display = "none";
+    };
+    
+    closeBtn.onclick = closeModal;
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            closeModal();
+        }
+    };
+
+    // --- Attach Click Listeners to Watch Now Buttons ---
+    const streamButtons = document.querySelectorAll('.watch-now-btn');
+    
+    streamButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const imdbId = btn.dataset.imdbId;
+            const movieTitle = btn.dataset.title;
+            
+            // Update Modal UI
+            modalTitle.textContent = `Watch: ${movieTitle}`;
+            modal.style.display = "block";
+            
+            // Fetch Links
+            fetchStreamingLinks(imdbId);
+        });
+    });
+
+    // --- API Fetching Logic ---
+    
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
+                if (i === maxRetries - 1) throw error;
+                await sleep(Math.pow(2, i) * 1000);
+            }
+        }
+    }
+
+    async function fetchStreamingLinks(id) {
+        modalContentDiv.innerHTML = '<p style="text-align: center; color: #ffa502;">Fetching links...</p>';
+
+        try {
+            const url = `/get_streaming_links?imdb_id=${id}`;
+            const response = await fetchWithRetry(url, { method: 'GET' });
+            const data = await response.json();
+
+            if (data.error) {
+                modalContentDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">${data.error}</p>`;
+                return;
+            }
+
+            let linksHtml = '<ul>';
+            let linkCount = 0;
+
+            for (const [service, linkUrl] of Object.entries(data)) {
+                linksHtml += `<li><a href="${linkUrl}" target="_blank" title="Stream on ${service}">Watch on ${service}</a></li>`;
+                linkCount++;
+            }
+            linksHtml += '</ul>';
+
+            if (linkCount > 0) {
+                modalContentDiv.innerHTML = linksHtml;
+            } else {
+                modalContentDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">No streaming links found for this movie.</p>`;
+            }
+
+        } catch (error) {
+            console.error('Failed to fetch streaming links:', error);
+            modalContentDiv.innerHTML = `<p style="color: #ff6b81; text-align: center;">Failed to connect to streaming service.</p>`;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Engine</title>
+
+  <!-- Correct Flask static linking -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>🎬 Movie Engine</h2>
+      <nav>
+        <ul>
+          <li><a href="{{ url_for('catalog') }}">📚 Movie Catalog</a></li>
+          <li><a href="{{ url_for('recommend') }}">🎯 Recommendations</a></li>
+          <li><a href="{{ url_for('similarity') }}">🔍 Similarity Checker</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

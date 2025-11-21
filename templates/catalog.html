@@ -1,0 +1,75 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<style>
+.catalog-search-container {
+    padding: 3rem;
+    background: #2f3542;
+    border-radius: 15px;
+    max-width: 600px;
+    margin: 4rem auto;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    color: #dfe4ea;
+}
+.catalog-search-container h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: #00a8e1;
+}
+#catalog-form {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+#catalog-form input {
+    flex-grow: 1;
+    max-width: 400px;
+    padding: 1rem;
+    border: 2px solid #3742fa;
+    border-radius: 10px;
+    background: #1e272e;
+    color: #dfe4ea;
+    font-size: 1.1rem;
+}
+#catalog-form button {
+    background: #3742fa;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: background 0.3s, transform 0.2s;
+}
+#catalog-form button:hover {
+    background: #5463ff;
+    transform: translateY(-1px);
+}
+</style>
+
+<div class="catalog-search-container">
+    <h1>Search the Movie Catalog</h1>
+    <p>Find detailed information on your favorite films.</p>
+    
+    <!-- This form submits the query to the backend, which processes the search and renders the results page -->
+    <form id="catalog-form" method="GET" action="{{ url_for('catalog_search_results') }}">
+        <input 
+            type="text" 
+            name="q" 
+            placeholder="Enter movie title..." 
+            required
+            id="catalog-input"
+        >
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Basic focus on load
+    document.getElementById('catalog-input').focus();
+});
+</script>
+{% endblock %}

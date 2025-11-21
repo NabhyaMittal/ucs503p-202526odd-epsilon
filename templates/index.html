@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Engine</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- Header -->
+  <header class="hero">
+    <div class="hero-content">
+      <h1>🎬 Movie Engine</h1>
+      <p class="tagline">Intelligent movie discovery through machine learning & sentiment analysis.</p>
+      <a href="{{ url_for('recommend')}}">
+        <button>Find the best movie for me</button>
+      </a>
+    </div>
+  </header>
+
+  <!-- USP Section -->
+  <section class="usp">
+    <h2>Why Our Recommendations Work?</h2>
+    <p>
+      Unlike other platforms, we tell you <strong>why</strong> a movie is recommended.  
+      If you loved <em>Inception</em>, we might recommend <em>Interstellar</em> – not just because of genre, but due to deep similarity in storytelling, direction, and user sentiment.
+    </p>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <h2>Our Core Strengths</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>👍 Smart Recommendations</h3>
+        <p>Content-based filtering ensures movies match your taste in genre, plot & cast.</p>
+      </div>
+      <div class="card">
+        <h3>🔍 Similarity Checker</h3>
+        <p>Quantitative analysis to measure relationships between any two movies.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Sentiment Insights</h3>
+        <p>We analyze reviews to show audience emotions & real reception.</p>
+      </div>
+      <div class="card">
+        <h3>📽 Movie Catalog</h3>
+        <p>Explore a complete database with detailed cast, crew, and visuals.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- User Journey -->
+  <section class="journey">
+    <h2>User Journey</h2>
+    <div class="steps">
+      <div class="step">📖 Browse Catalog</div>
+      <div class="step">🎥 Select Movie</div>
+      <div class="step">✨ Discover & Compare</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Ready to Transform Movie Discovery</p>
+    <p>Data-driven | User-friendly | Comprehensive</p>
+  </footer>
+
+  <!-- Chatbot Modal -->
+  <div id="chatbot-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Movie Assistant 🤖</h2>
+      <p>Tell me about your mood, and I’ll find the best movie for you.</p>
+      <textarea placeholder="Type your mood here..."></textarea>
+      <button>Get Recommendation</button>
+    </div>
+  </div>
+
+  <script>
+    // Modal logic
+    const modal = document.getElementById("chatbot-modal");
+    const btn = document.getElementById("chatbot-btn");
+    const span = document.querySelector(".close");
+
+    btn.onclick = () => modal.style.display = "block";
+    span.onclick = () => modal.style.display = "none";
+    window.onclick = e => { if (e.target == modal) modal.style.display = "none"; };
+  </script>
+</body>
+</html>

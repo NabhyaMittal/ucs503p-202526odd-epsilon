@@ -1,0 +1,434 @@
+{% extends "dashboard_base.html" %}
+
+{% block content %}
+<style>
+    /* Global Styles */
+    body {
+        font-family: 'Inter', sans-serif;
+        color: #f1f1f1;
+        background-color: #1a1a1a;
+    }
+
+    h1 {
+        color: #3742fa;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    p {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #dfe4ea;
+    }
+
+    /* Similarity Container Layout */
+    .similarity-container {
+        display: flex;
+        flex-direction: row;
+        gap: 2rem;
+        justify-content: center;
+        align-items: flex-start;
+        margin: 2rem 0;
+    }
+
+    .similarity-box {
+        background: #2f3542;
+        padding: 1.5rem;
+        border-radius: 12px;
+        width: 450px;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .similarity-box h3 {
+        color: #ffa502;
+        border-bottom: 1px solid #4a5568;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Debug text style */
+    .debug-id-display {
+        font-size: 0.8rem;
+        color: #a0aec0;
+        margin-bottom: 1rem;
+        font-family: monospace;
+        min-height: 1.2em;
+    }
+
+    /* Search Form Elements */
+    .similarity-search-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .similarity-search-form input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 2px solid #4a5568;
+        border-radius: 8px;
+        background: #1e272e;
+        color: #f1f1f1;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .similarity-search-form input:focus {
+        border-color: #3742fa;
+    }
+    .similarity-search-form button {
+        background: #3742fa;
+        color: #fff;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+    .similarity-search-form button:hover {
+        background: #2c35cb;
+    }
+    .similarity-search-form button:active {
+        transform: scale(0.98);
+    }
+
+
+    /* Container for the visual search results in similarity checker */
+    .similarity-visual-results {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+        min-height: 100px; /* Reserve space */
+        background: #2f3542;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid #4a5568;
+    }
+
+    .similarity-result-card {
+        width: 120px;
+        text-align: center;
+        background: #1e272e;
+        padding: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+        border: 2px solid transparent;
+    }
+    .similarity-result-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+    }
+    .similarity-result-card.selected {
+        border: 2px solid #ffa502;
+        box-shadow: 0 0 15px rgba(255, 165, 2, 0.7);
+    }
+    .similarity-result-card img {
+        width: 100%;
+        height: auto;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+    }
+    .similarity-result-card p {
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1.2;
+        color: #f1f1f1;
+    }
+
+    /* --- NEW STYLES FOR THE SIMILARITY BUTTON --- */
+    .similarity-button-container {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    #check-similarity-btn {
+        /* Basic sizing and shape */
+        padding: 1rem 3rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 50px; /* Pill shape */
+        cursor: pointer;
+        outline: none;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        
+        /* Gradient Background */
+        background: linear-gradient(135deg, #ffa502 0%, #ff4757 100%); /* Orange to Red */
+        color: #1e272e; /* Dark text for contrast */
+        
+        /* Shadow for lift */
+        box-shadow: 0 10px 20px rgba(255, 165, 2, 0.4);
+        
+        /* Transition for hover effects */
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    #check-similarity-btn:hover:not(:disabled) {
+        /* Zoom and Shadow change on hover */
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(255, 165, 2, 0.6);
+        background: linear-gradient(135deg, #ffb84a 0%, #ff6b81 100%);
+    }
+
+    #check-similarity-btn:active:not(:disabled) {
+        /* Press effect */
+        transform: translateY(-2px) scale(0.99);
+        box-shadow: 0 5px 10px rgba(255, 165, 2, 0.3);
+    }
+
+    #check-similarity-btn:disabled {
+        background: #4a5568;
+        color: #a0aec0;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+    
+    /* Similarity Results Display */
+    .similarity-results-container {
+        display: none; /* Hidden by default, shown on calculation */
+        text-align: center;
+        padding: 2rem;
+        background: #1e272e;
+        border-radius: 12px;
+        max-width: 600px;
+        margin: 2rem auto;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        border: 2px solid #3742fa;
+    }
+
+    .similarity-score {
+        font-size: 4rem;
+        font-weight: 900;
+        color: #3742fa;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .similarity-score-text {
+        font-size: 1.2rem;
+        color: #dfe4ea;
+    }
+
+</style>
+
+<h1>Similarity Checker</h1>
+<p>Select two movies to see how similar they are based on their content.</p>
+
+<div class="similarity-container">
+    
+    <!-- Movie 1 Box -->
+    <div class="similarity-box">
+        <h3>Movie 1: <span id="selected-title-1">None Selected</span></h3>
+        <!-- Debugging ID Display -->
+        <div id="debug-id-1" class="debug-id-display">Selected ID: -</div>
+        
+        <div class="similarity-search-form">
+            <input type="text" id="search-input-1" class="catalog-search-input" placeholder="Enter movie title..." autocomplete="off">
+            <button id="search-btn-1">Search</button>
+        </div>
+        <div id="results-1" class="similarity-visual-results"></div>
+        <input type="hidden" id="movie-id-1">
+        <input type="hidden" id="movie-title-1">
+    </div>
+    
+    <!-- Movie 2 Box -->
+    <div class="similarity-box">
+        <h3>Movie 2: <span id="selected-title-2">None Selected</span></h3>
+        <!-- Debugging ID Display -->
+        <div id="debug-id-2" class="debug-id-display">Selected ID: -</div>
+
+        <div class="similarity-search-form">
+            <input type="text" id="search-input-2" class="catalog-search-input" placeholder="Enter movie title..." autocomplete="off">
+            <button id="search-btn-2">Search</button>
+        </div>
+        <div id="results-2" class="similarity-visual-results"></div>
+        <input type="hidden" id="movie-id-2">
+        <input type="hidden" id="movie-title-2">
+    </div>
+
+</div>
+
+<div class="similarity-button-container">
+  <button id="check-similarity-btn">Check Similarity</button>
+</div>
+
+<div id="similarity-results" class="similarity-results-container">
+  <div id="similarity-score-value" class="similarity-score">...</div>
+  <p id="similarity-score-text" class="similarity-score-text">...</p>
+</div>
+
+<script>
+const showMessage = (message) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.textContent = message;
+    tempDiv.style.cssText = `
+        position: fixed; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        padding: 20px; 
+        background-color: #ff4757; 
+        color: white; 
+        border-radius: 8px; 
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        font-size: 1.1rem;
+        text-align: center;
+    `;
+    document.body.appendChild(tempDiv);
+    setTimeout(() => {
+        document.body.removeChild(tempDiv);
+    }, 3000);
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    
+    const checkBtn = document.getElementById("check-similarity-btn");
+    const resultsContainer = document.getElementById("similarity-results");
+    const scoreValue = document.getElementById("similarity-score-value");
+    const scoreText = document.getElementById("similarity-score-text");
+    
+    // Reusable search function (same as before)
+    const setupSearch = (inputEl, searchBtnEl, resultsEl, idInputEl, titleInputEl, selectedTitleEl, debugIdEl) => {
+        searchBtnEl.addEventListener("click", async () => {
+            const query = inputEl.value.trim();
+            if (query.length < 2) return;
+
+            resultsEl.innerHTML = '<p style="color:#dfe4ea; text-align: center;">Searching...</p>';
+            searchBtnEl.disabled = true;
+
+            try {
+                const res = await fetch(`/search_catalog?q=${encodeURIComponent(query)}&limit=4`);
+                const movies = await res.json();
+                
+                resultsEl.innerHTML = "";
+                if (movies.length === 0) {
+                    resultsEl.innerHTML = '<p style="color:#dfe4ea; text-align: center;">No movies found.</p>';
+                    return;
+                }
+
+                movies.forEach(movie => {
+                    if (!movie.imdb_id) return;
+
+                    const card = document.createElement("div");
+                    card.classList.add("similarity-result-card");
+
+                    const img = document.createElement("img");
+                    img.src = movie.poster_path;
+                    img.alt = movie.title;
+                    img.onerror = () => { img.src = 'https://placehold.co/120x160/2f3542/f1f1f1?text=No+Poster'; };
+
+                    const titleP = document.createElement("p");
+                    titleP.textContent = movie.title;
+                    
+                    card.appendChild(img);
+                    card.appendChild(titleP);
+
+                    card.addEventListener("click", () => {
+                        Array.from(resultsEl.children).forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        idInputEl.value = movie.imdb_id;
+                        titleInputEl.value = movie.title;
+                        selectedTitleEl.textContent = movie.title;
+                        if(debugIdEl) debugIdEl.textContent = `Selected ID: ${movie.imdb_id}`;
+                    });
+
+                    resultsEl.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Error:", error);
+                resultsEl.innerHTML = '<p style="color: #ff4757;">Error searching.</p>';
+            } finally {
+                searchBtnEl.disabled = false;
+            }
+        });
+    };
+    
+    setupSearch(
+        document.getElementById("search-input-1"),
+        document.getElementById("search-btn-1"),
+        document.getElementById("results-1"),
+        document.getElementById("movie-id-1"),
+        document.getElementById("movie-title-1"),
+        document.getElementById("selected-title-1"),
+        document.getElementById("debug-id-1")
+    );
+    
+    setupSearch(
+        document.getElementById("search-input-2"),
+        document.getElementById("search-btn-2"),
+        document.getElementById("results-2"),
+        document.getElementById("movie-id-2"),
+        document.getElementById("movie-title-2"),
+        document.getElementById("selected-title-2"),
+        document.getElementById("debug-id-2")
+    );
+    
+    // --- Handle Similarity Check (USING INTERNAL PROXY) ---
+    
+    const movieInput1Id = document.getElementById("movie-id-1");
+    const movieInput2Id = document.getElementById("movie-id-2");
+    const movieInput1Title = document.getElementById("movie-title-1");
+    const movieInput2Title = document.getElementById("movie-title-2");
+
+    checkBtn.addEventListener("click", async () => {
+        const id1 = movieInput1Id.value.trim();
+        const id2 = movieInput2Id.value.trim();
+        const title1 = movieInput1Title.value.trim();
+        const title2 = movieInput2Title.value.trim();
+
+        if (!id1 || !id2) {
+            showMessage("Please select two movies to check similarity.");
+            return;
+        }
+
+        checkBtn.disabled = true;
+        checkBtn.textContent = "Calculating...";
+        resultsContainer.style.display = "none";
+
+        try {
+            // IMPORTANT: Calling the internal Flask route, NOT the external API directly
+            const res = await fetch("{{ url_for('calculate_similarity') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    imdb_id_1: id1,
+                    imdb_id_2: id2,
+                    title1: title1,
+                    title2: title2
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.error || "Error checking similarity.");
+            }
+            
+            if (data.cosine_similarity !== undefined) {
+                const percentage = (data.cosine_similarity * 100).toFixed(2) + "%";
+                scoreValue.textContent = percentage;
+                scoreText.textContent = `Similarity between "${title1}" and "${title2}"`;
+                resultsContainer.style.display = "block"; 
+            } else {
+                throw new Error("Invalid response format.");
+            }
+
+        } catch (error) {
+            console.error("Similarity error:", error);
+            scoreValue.textContent = "Error";
+            scoreText.textContent = "Could not calculate similarity.";
+            resultsContainer.style.display = "block";
+        } finally {
+            checkBtn.disabled = false;
+            checkBtn.textContent = "Check Similarity";
+        }
+    });
+});
+</script>
+{% endblock %}
