@@ -10,7 +10,8 @@ from urllib.parse import quote_plus
 try:
     import google.generativeai as genai
     # NOTE: Using a hardcoded API key is generally unsafe.
-    genai.configure(api_key="AIzaSyDDlXbk-rwhDYA3cqME8yjXQUL6f73Juk8") 
+    api_key=os.getenv("GOOGLE_API_KEY")
+    genai.configure(api_key=api_key) 
     model = genai.GenerativeModel('gemini-2.5-flash') 
     print("Gemini model loaded successfully.")
 except Exception as e:
